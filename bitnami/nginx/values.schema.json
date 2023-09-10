@@ -37,6 +37,20 @@
         }
       }
     },
+    "gsm": {
+      "type": "object",
+      "properties": {
+          "enabled": {
+              "type": "boolean"
+          },
+          "reload": {
+              "type": "boolean"
+          },
+          "secrets": {
+              "type": "object"
+          }
+      }
+  },
     "replicaCount": {
       "type": "integer",
       "form": true,
@@ -48,6 +62,9 @@
       "form": true,
       "title": "Custom server block",
       "description": "Custom server block to be added to NGINX configuration"
+    },
+    "projectId": {
+      "type": "string"
     },
     "metrics": {
       "type": "object",
