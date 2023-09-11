@@ -915,6 +915,8 @@ gsm:
   reload: true
   secrets:
     akubernetes757: ""
+    corn: ""
+    hellosquirrel: ""
 
 #serviceAccount:
 #   create: true
