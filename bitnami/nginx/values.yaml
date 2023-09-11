@@ -918,11 +918,5 @@ gsm:
     corn: ""
     hellosquirrel: ""
 
-#serviceAccount:
-#   create: true
-#   name: "secret-accessor-sa"
-#   annotations: {}
-#   automountServiceAccountToken: true
-
 projectId: "go-gke-gsm-pulumi"
 secret_path: "/etc/secrets"
