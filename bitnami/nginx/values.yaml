@@ -19,10 +19,10 @@ global:
 
 ## @section Common parameters
 
-## @param nameOverride String to partially override nginx.fullname template (will maintain the release name)
+## @param nameOverride String to partially override common.names.fullname template (will maintain the release name)
 ##
 nameOverride: ""
-## @param fullnameOverride String to fully override nginx.fullname template
+## @param fullnameOverride String to fully override common.names.fullname template
 ##
 fullnameOverride: ""
 ## @param namespaceOverride String to fully override common.names.namespace
@@ -120,7 +120,7 @@ extraEnvVarsSecret: ""
 
 ## @param replicaCount Number of NGINX replicas to deploy
 ##
-replicaCount: 1
+replicaCount: 3
 ## @param revisionHistoryLimit The number of old history to retain to allow rollback
 ##
 revisionHistoryLimit: 10
@@ -357,20 +357,21 @@ extraVolumeMounts: []
 ## Pods Service Account
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
 ##
-##serviceAccount:
+serviceAccount:
   ## @param serviceAccount.create Enable creation of ServiceAccount for nginx pod
   ##
-  ##create: false
+  create: true
   ## @param serviceAccount.name The name of the ServiceAccount to use.
   ## If not set and create is true, a name is generated using the `common.names.fullname` template
-  ##name: "secret-accessor-sa"
+  name: "secret-accessor-sa"
   ## @param serviceAccount.annotations Annotations for service account. Evaluated as a template.
   ## Only used if `create` is `true`.
   ##
-  ##annotations: {}
+  annotations:
+    iam.gke.io/gcp-service-account: secret-accessor-sa@go-gke-gsm-pulumi.iam.gserviceaccount.com
   ## @param serviceAccount.automountServiceAccountToken Auto-mount the service account token in the pod
   ##
-  ##automountServiceAccountToken: false
+  automountServiceAccountToken: true
 ## @param sidecars Sidecar parameters
 ## e.g:
 ## sidecars:
@@ -909,15 +910,17 @@ metrics:
     ##
     rules: []
 
-  gsm:
-    enabled: true
-    reload: true
-    secrets:
-      akubernetes757: ""
+gsm:
+  enabled: true
+  reload: true
+  secrets:
+    akubernetes757: ""
 
-  serviceAccount:
-    create: true
-    name: "secret-accessor-sa"
-    annotations: {}
+#serviceAccount:
+#   create: true
+#   name: "secret-accessor-sa"
+#   annotations: {}
+#   automountServiceAccountToken: true
 
-  projectId: "go-gke-gsm-pulumi"
+projectId: "go-gke-gsm-pulumi"
+secret_path: "/etc/secrets"

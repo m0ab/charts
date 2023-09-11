@@ -1,112 +1,102 @@
- apiVersion: apps/v1
- kind: Deployment
- metadata:
-   name: {{ include "goodluck.fullname" . }}
-   {{- if .Values.gsm.reload }}
-   annotations:
-     secret.reloader.stakater.com/reload: {{ include "goodluck.fullname" . }}-gsm-secret
-   {{- end}}
-   labels:
-     {{- include "goodluck.labels" . | nindent 4 }}
- spec:
-   {{- if not .Values.autoscaling.enabled }}
-   replicas: {{ .Values.replicaCount }}
-   {{- end }}
-   selector:
-     matchLabels:
-       {{- include "goodluck.selectorLabels" . | nindent 6 }}
-   template:
-     metadata:
-       {{- with .Values.podAnnotations }}
-       annotations:
-         {{- toYaml . | nindent 8 }}
-       {{- end }}
-       labels:
-         {{- include "goodluck.selectorLabels" . | nindent 8 }}
-     spec:
-       {{- with .Values.imagePullSecrets }}
-       imagePullSecrets:
-         {{- toYaml . | nindent 8 }}
-       {{- end }}
-       serviceAccountName: {{ include "goodluck.serviceAccountName" . }}
-       securityContext:
-         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-       containers:
-         - name: {{ .Chart.Name }}
-           securityContext:
-             {{- toYaml .Values.securityContext | nindent 12 }}
-           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-           imagePullPolicy: {{ .Values.image.pullPolicy }}
-           {{- if .Values.gsm.enabled }}
-           env:
-             {{- range $key, $val := .Values.gsm.secrets }}
-             {{- if ne $val "" }}
-             - name: {{ $key }}
-               value: {{ $val | quote }}
-             {{- end }}
-             {{- end }}
-           {{- end }}
-           envFrom:
-           - configMapRef:
-               name: {{ include "goodluck.fullname" . }}-config
-               optional: true 
-           - secretRef:
-               {{- if .Values.gsm.enabled }}
-               name: {{ include "goodluck.fullname" . }}-gsm-secret
-               {{- end }}
-           ports:
-             - name: grpc
-               containerPort: {{ .Values.service.port }}
-               protocol: TCP
-           {{- with .Values.podLiveness }}
-           readinessProbe:
-             tcpSocket:
-               port: {{ .Values.service.port }}
-             initialDelaySeconds: 5
-             periodSeconds: 10
-           livenessProbe:
-             tcpSocket:
-               port: {{ .Values.service.port }}
-             initialDelaySeconds: 15
-             periodSeconds: 20
-           {{- end }}
-           resources:
-             {{- toYaml .Values.resources | nindent 12 }}
-           {{- if or .Values.secret_files .Values.gsm.enabled }}
-           volumeMounts:
-             {{- if .Values.secret_files }}
-             - name: secret-volume
-               mountPath: {{ .Values.secret_path }}
-               readOnly: true
-             {{- else if .Values.gsm.enabled }}
-             - name: gsm-secret
-               mountPath: {{ .Values.secret_path }}
-             {{- end }}
-           {{- end }}
-       {{- with .Values.nodeSelector }}
-       nodeSelector:
-         {{- toYaml . | nindent 8 }}
-       {{- end }}
-       {{- with .Values.affinity }}
-       affinity:
-         {{- toYaml . | nindent 8 }}
-       {{- end }}
-       {{- with .Values.tolerations }}
-       tolerations:
-         {{- toYaml . | nindent 8 }}
-       {{- end }}
-       {{- if or .Values.secret_files .Values.gsm.enabled }}
-       volumes:
-         {{- if .Values.secret_files }}
-         - name: secret-volume
-           secret:
-             secretName: {{ include "goodluck.fullname" . }}-secret
-         {{- else if .Values.gsm.enabled }}
-         - name: gsm-secret
-           csi:
-             driver: secrets-store.csi.k8s.io
-             readOnly: true
-             volumeAttributes:
-               secretProviderClass: {{ include "goodluck.fullname" . }}-gsm-secret
-         {{- end }}
-       {{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "common.names.fullname" . }}
+  {{- if .Values.gsm.reload }}
+  annotations:
+    secret.reloader.stakater.com/reload: {{ .Release.Name }}-gsm-secret
+  {{- end}}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ include "common.names.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "common.names.fullname" . }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "nginx.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.gsm.enabled }}
+          env:
+            {{- range $key, $val := .Values.gsm.secrets }}
+            {{- if ne $val "" }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          envFrom:
+          - configMapRef:
+              name: {{ include "common.names.fullname" . }}-config
+              optional: true 
+          - secretRef:
+              name: {{ .Release.Name }}-gsm-secret
+          {{- with .Values.podLiveness }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if or .Values.secret_files (and .Values.gsm (default false .Values.gsm.enabled)) }}
+          volumeMounts:
+            {{- if .Values.secret_files }}
+            - name: secret-volume
+              mountPath: {{ .Values.secret_path }}
+              readOnly: true
+            {{- else if .Values.gsm.enabled }}
+            - name: gsm-secret
+              mountPath: {{ .Values.secret_path }}
+            {{- end }}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.gsm.enabled }}
+      volumes:
+        {{- if .Values.secret_files }}
+        - name: secret-volume
+          secret:
+            secretName: {{ include "common.names.fullname" . }}-secret
+        {{- else if .Values.gsm.enabled }}
+        - name: gsm-secret
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ .Release.Name }}-gsm-secret
+        {{- end }}
+      {{- end }}

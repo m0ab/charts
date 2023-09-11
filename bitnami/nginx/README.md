@@ -64,8 +64,8 @@ The command removes all the Kubernetes components associated with the chart and 
 
 | Name                     | Description                                                                             | Value           |
 | ------------------------ | --------------------------------------------------------------------------------------- | --------------- |
-| `nameOverride`           | String to partially override nginx.fullname template (will maintain the release name)   | `""`            |
-| `fullnameOverride`       | String to fully override nginx.fullname template                                        | `""`            |
+| `nameOverride`           | String to partially override common.names.fullname template (will maintain the release name)   | `""`            |
+| `fullnameOverride`       | String to fully override common.names.fullname template                                        | `""`            |
 | `namespaceOverride`      | String to fully override common.names.namespace                                         | `""`            |
 | `kubeVersion`            | Force target Kubernetes version (using Helm capabilities if not set)                    | `""`            |
 | `clusterDomain`          | Kubernetes Cluster Domain                                                               | `cluster.local` |
